@@ -1,3 +1,5 @@
-# Windows で clone しても改行が CRLF にならないようにする（bash スクリプトが動かなくなるため）
-*.sh text eol=lf
-docker/Dockerfile text eol=lf
+# 改行コードを OS に関係なくそろえる（Windows で clone しても bash スクリプトなどが CRLF にならないように）
+* text=auto eol=lf
+# Windows 用のバッチファイル・PowerShell スクリプトは CRLF
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

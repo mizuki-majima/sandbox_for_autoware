@@ -17,7 +17,7 @@ detect_platform() {
       if grep -qi microsoft /proc/version 2>/dev/null; then PLATFORM=wsl; else PLATFORM=linux; fi
       ;;
     MINGW* | MSYS* | CYGWIN*)
-      die "Windows では WSL2 の Ubuntu ターミナルから実行してください（README の「Windows の場合」を参照）"
+      die "Windows では scripts\\setup.cmd / scripts\\run.cmd を使ってください（Git Bash からは実行できません）"
       ;;
     *) die "未対応の OS です: $(uname -s)" ;;
   esac

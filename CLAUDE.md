@@ -15,6 +15,10 @@ TIER IV の scenario_simulator_v2 で Autoware を動かすサンドボックス
 ## 変更するときの注意
 
 - `scripts/*.sh` はホスト（macOS 標準の bash 3.2 を含む）で動く。連想配列・`${var,,}`・`mapfile`・`sed -i`・`readlink -f` など、bash 4 以降や GNU 独自の機能は使わない
+- `scripts/*.ps1` は Windows 標準の PowerShell 5.1 で動く。`??`・`&&`・三項演算子など PowerShell 7 だけの書き方は使わない。
+  日本語を含むので UTF-8（BOM 付き）で保存する（BOM がないと PowerShell 5.1 が文字化けして構文エラーになる）。
+  `scripts/*.cmd` は入口だけの ASCII のバッチファイル。改行は .gitattributes で CRLF、それ以外は LF にそろえている
+- `scripts/*.sh` と `scripts/*.ps1` は同じ処理を 2 通りで書いているので、片方を変えたらもう片方も合わせる
 - `docker/*.sh` はコンテナ内（Ubuntu 22.04 / bash 5）で動く
 - ベースイメージ（Dockerfile の `AUTOWARE_IMAGE`）と `SIM_VERSION` は組み合わせで動作確認している。変えたらシナリオが通ることを確認する
 - RViz の表示が止まる問題は CPU の取り合いが原因（README の「仕組みのメモ」参照）。RViz を Autoware 側で起動させる形に戻すと再発する

@@ -11,8 +11,10 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ビルド中だけプロキシとその CA を使うためのヘルパー（CA はイメージに残さない）
+# ビルド中だけプロキシとその CA を使うためのヘルパー（CA はイメージに残さない）。
+# Windows で改行コードが CRLF に変わっていても動くよう、念のため LF にそろえる
 COPY --chmod=755 docker/with-build-network.sh /usr/local/bin/with-build-network
+RUN sed -i 's/\r$//' /usr/local/bin/with-build-network
 
 # packages.ros.org に届かない環境向けに ROS の apt リポジトリをミラーへ差し替える（空なら変更しない）
 ARG ROS_APT_MIRROR=""
@@ -73,6 +75,7 @@ RUN printf '%s\n' \
 
 COPY --chmod=755 docker/make_rviz_config.py /usr/local/bin/make_rviz_config
 COPY --chmod=755 docker/run_scenario.sh /usr/local/bin/run_scenario
+RUN sed -i 's/\r$//' /usr/local/bin/make_rviz_config /usr/local/bin/run_scenario
 
 ENTRYPOINT []
 CMD ["run_scenario"]

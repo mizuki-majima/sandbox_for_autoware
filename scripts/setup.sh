@@ -43,16 +43,32 @@ if [ -n "${PROXY_CA_CERT:-}" ]; then
   build_args+=(--secret "id=proxy_ca,src=${PROXY_CA_CERT}")
 fi
 
-# プロキシ設定をビルドに引き継ぐ。プロキシが localhost 上にある場合はホストのネットワークでビルドする
+# プロキシ設定をビルドに引き継ぐ。プロキシが localhost 上にある場合、
+# Linux ではホストのネットワークでビルドし、Docker Desktop（Mac / WSL2）では host.docker.internal に読み替える
+use_host_network=0
 for name in HTTPS_PROXY https_proxy HTTP_PROXY http_proxy NO_PROXY no_proxy; do
   value="$(printenv "${name}" || true)"
-  if [ -n "${value}" ]; then
-    build_args+=(--build-arg "${name}=${value}")
-  fi
+  [ -n "${value}" ] || continue
+  case "${name}" in
+    NO_PROXY | no_proxy) ;;
+    *)
+      case "${value}" in
+        *://127.0.0.1* | *://localhost* | *://\[::1\]*)
+          if [ "${PLATFORM}" = linux ]; then
+            use_host_network=1
+          else
+            value="$(printf '%s' "${value}" | sed -e 's#://127\.0\.0\.1#://host.docker.internal#' \
+              -e 's#://localhost#://host.docker.internal#' -e 's#://\[::1\]#://host.docker.internal#')"
+          fi
+          ;;
+      esac
+      ;;
+  esac
+  build_args+=(--build-arg "${name}=${value}")
 done
-case "$(printenv HTTPS_PROXY || printenv https_proxy || true)" in
-  *://127.0.0.1:* | *://localhost:* | *://\[::1\]:*) build_args+=(--network host) ;;
-esac
+if [ "${use_host_network}" = 1 ]; then
+  build_args+=(--network host)
+fi
 
 log "イメージ ${IMAGE} をビルドします（初回は Autoware イメージの取得とビルドで 30〜60 分ほどかかります）"
 DOCKER_BUILDKIT=1 docker build -f "${REPO_DIR}/docker/Dockerfile" -t "${IMAGE}" "${build_args[@]}" "${REPO_DIR}"
