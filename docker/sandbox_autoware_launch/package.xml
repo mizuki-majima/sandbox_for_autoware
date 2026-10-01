@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sandbox_autoware_launch</name>
+  <version>0.1.0</version>
+  <description>Launch the Autoware planning simulator without RViz (RViz is started separately by run_scenario)</description>
+  <maintainer email="sandbox@example.com">sandbox_for_autoware</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>autoware_launch</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

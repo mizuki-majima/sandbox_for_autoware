@@ -1,0 +1,3 @@
+# Windows で clone しても改行が CRLF にならないようにする（bash スクリプトが動かなくなるため）
+*.sh text eol=lf
+docker/Dockerfile text eol=lf

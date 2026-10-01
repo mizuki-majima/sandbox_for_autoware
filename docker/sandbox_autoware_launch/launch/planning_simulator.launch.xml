@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+  autoware_launch の planning_simulator を RViz なしで起動する。
+  RViz は run_scenario が優先度を上げて別に起動する（CPU が少ないと RViz に CPU が回らず、表示が止まるため）。
+
+  scenario_test_runner から渡される引数（map_path など）はそのまま引き継がれる。
+  ただし既定値のない引数は include に明示的に渡す必要があるため、ここで渡している。
+-->
+<launch>
+  <include file="$(find-pkg-share autoware_launch)/launch/planning_simulator.launch.xml">
+    <arg name="map_path" value="$(var map_path)"/>
+    <arg name="vehicle_model" value="$(var vehicle_model)"/>
+    <arg name="sensor_model" value="$(var sensor_model)"/>
+    <arg name="rviz" value="false"/>
+  </include>
+</launch>
