@@ -6,7 +6,7 @@ TIER IV の scenario_simulator_v2 で Autoware を動かすサンドボックス
 
 - 前提：環境の Network access が `Full`（`ghcr.io` のイメージ本体が `pkg-containers.githubusercontent.com` から配信されるため）。足りなければ利用者に変更を頼む
 - `scripts/setup.sh` を `run_in_background` で実行する（初回 約 45 分。dockerd の起動・プロキシ・CA・ROS ミラーはスクリプトが自動で処理する）
-- `scripts/run.sh` を実行する（sample.yaml は 3 パターンで約 9 分）。終了コード 0 なら全シナリオ合格。合否だけ見たいなら `VIEWER=0`
+- `scripts/run.sh` を実行する（sample.yaml は 3 パターンで約 10 分）。終了コード 0 なら全シナリオ合格。合否だけ見たいなら `VIEWER=0`
 - 結果は `output/<日時>/`：合否 `scenario_test_runner/result.junit.xml`、録画 `rviz.mp4`、ログ `launch.log`
 - 利用者は録画を直接見られないので、`scripts/make_gif.sh <mp4> <開始秒> <長さ秒> <倍速> [幅]` で走行部分を GIF にして送る。
   走行区間は launch.log の `=> Driving` と `Passed` の時刻から見当をつけ、フレームを確認してから切り出す

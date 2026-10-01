@@ -7,7 +7,7 @@ TIER IV の [scenario_simulator_v2](https://github.com/tier4/scenario_simulator_
 | | Windows | Mac / Linux |
 |---|---|---|
 | 1. 準備（初回だけ・30〜60 分） | `scripts\setup.cmd` | `scripts/setup.sh` |
-| 2. シナリオ実行（約 9 分） | `scripts\run.cmd` | `scripts/run.sh` |
+| 2. シナリオ実行（3 パターンで約 10 分） | `scripts\run.cmd` | `scripts/run.sh` |
 
 - 実行中は **ブラウザで http://localhost:6080 を開くと、RViz の画面をリアルタイムで見られます**（マウス操作も可）
 - 合否・ログ・録画（mp4）は `output/<日時>/` に保存されます
@@ -50,12 +50,12 @@ Git がない場合：GitHub のページで **Code → Download ZIP** を押し
 
 ### Windows
 
-Docker Desktop を起動しておき、PowerShell（または コマンドプロンプト）で、ダウンロードしたフォルダに移動して実行します。
+Docker Desktop を起動しておき、PowerShell（またはコマンドプロンプト）で、ダウンロードしたフォルダに移動して実行します（`setup.cmd` は初回だけ）。
 エクスプローラーで `scripts` フォルダの `setup.cmd` → `run.cmd` を順にダブルクリックしても動きます。
 
 ```powershell
 cd sandbox_for_autoware
-scripts\setup.cmd   # 初回だけ
+scripts\setup.cmd
 scripts\run.cmd
 ```
 
@@ -141,14 +141,15 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | 社内プロキシの内側でビルドできない | Docker Desktop の Settings → Resources → Proxies を設定し、`HTTPS_PROXY`・`HTTP_PROXY` も指定。TLS を検査するプロキシなら、その CA 証明書（PEM 形式。Windows の「Base 64 encoded X.509 (.CER)」で書き出したもの）を `PROXY_CA_CERT` に指定 |
 | Windows で「このシステムではスクリプトの実行が無効」と出る | `.ps1` を直接実行せず、`scripts\setup.cmd` / `scripts\run.cmd` を使う。会社のポリシーで PowerShell が使えない場合は、WSL2 の Ubuntu で Mac / Linux の手順を使う |
 | Windows の Git Bash で実行した | Git Bash では動きません。`scripts\setup.cmd` / `scripts\run.cmd` を使う |
+| setup で `universe-devel-humble-20260929: not found` と出る | 固定している Autoware の日付版イメージが公開終了した。`AUTOWARE_IMAGE` に新しい日付版（例 `ghcr.io/autowarefoundation/autoware:universe-devel-humble-20261101`）を、`SIM_VERSION` にその時点の [simulator.repos](https://github.com/autowarefoundation/autoware/blob/main/repositories/simulator.repos) のバージョンを指定 |
 | ディスクを空けたい | `docker image rm sandbox-autoware-sim ghcr.io/autowarefoundation/autoware:universe-devel-humble-20260929` と `docker builder prune` |
 
 ## 6. 動作確認状況
 
 | 環境 | 状況 |
 |---|---|
-| Claude Code のクラウド環境（Linux / amd64、4 コア・メモリ 15GB） | GitHub から取得したまっさらな状態から、`setup` → `run` で **3 / 3 合格**、ブラウザ表示がリアルタイムに更新されることを確認（bash 版・PowerShell 版の両方） |
-| Windows | 未確認（PowerShell スクリプトは Windows PowerShell 5.1 互換の静的検査、Windows を想定した動作の模擬テスト済み） |
+| Claude Code のクラウド環境（Linux / amd64、4 コア・メモリ 15GB） | Docker を空にし、GitHub から取得したばかりの状態で確認。`setup.ps1`（PowerShell 版）で一からイメージ作成（約 44 分）→ `setup.sh` はキャッシュで 2 秒。`run.ps1`・`run.sh` ともに **3 / 3 合格**（各 約 11 分）、ブラウザ表示のリアルタイム更新、`make_gif` も確認。実行中のメモリ使用量は最大 約 2GB |
+| Windows | 実機は未確認。PowerShell 版スクリプト自体は上記で動作確認済みで、Windows PowerShell 5.1 との互換性の静的検査（PSScriptAnalyzer）と、Windows を想定した分岐（Windows コンテナモードの検出・プロキシの読み替えなど）の模擬テストも済み |
 | Mac（Apple Silicon） | 未確認（arm64 版の Autoware イメージ、scenario_simulator_v2 の arm64 対応、macOS 標準の bash 3.2 での動作は確認済み） |
 | Linux PC | クラウド環境と同じ Linux なので、Docker があれば同様に動く見込み |
 
