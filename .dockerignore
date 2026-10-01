@@ -1,0 +1,3 @@
+# docker build にはこのフォルダ以外を送らない（output/ の録画などが重いため）
+*
+!docker/
