@@ -94,6 +94,7 @@ http://localhost:6080/vnc.html?autoconnect=true&resize=scale
 |---|---|
 | `scenario_test_runner/result.junit.xml` | シナリオごとの合否 |
 | `rviz.mp4` | RViz 画面の録画 |
+| `rviz.log` | RViz のログ（表示がおかしいときの調査用） |
 | `launch.log` | 実行ログ |
 
 録画の一部を GIF にする（共有用。例は 80 秒目から 115 秒分を 4 倍速で）：
@@ -103,7 +104,36 @@ scripts/make_gif.sh output/<日時>/rviz.mp4 80 115 4      # Mac / Linux
 scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 ```
 
-## 4. オプション（環境変数）
+## 4. ほかのシナリオを動かす
+
+`SCENARIO` にシナリオ名（同梱のもの）か、手元の YAML ファイルのパス（自作のもの）を指定します。
+
+```bash
+SCENARIO=RoutingAction.AcquirePositionAction-continuous.yaml scripts/run.sh          # Mac / Linux
+$env:SCENARIO = 'RoutingAction.AcquirePositionAction-continuous.yaml'; scripts\run.cmd   # Windows（PowerShell）
+SCENARIO=path/to/my_scenario.yaml scripts/run.sh                                      # 自作のシナリオ
+```
+
+scenario_simulator_v2 には 78 本のシナリオが同梱されていますが、多くはシミュレーター自体の機能テストで、
+**Autoware が運転するのは 25 本**です（うち 3 本は別の 3D シミュレーター AWSIM 用で、この環境では使えません）。主なもの：
+
+| 種類 | `SCENARIO` | 内容 | この環境での確認 |
+|---|---|---|---|
+| 基本 | `sample.yaml` | 3 つの開始位置からゴールまで走る | ✅ 合格（約 10 分） |
+| 連続ゴール | `RoutingAction.AcquirePositionAction-continuous.yaml` | ゴールに着くたびに次のゴールへ（6 回） | ✅ 合格（約 15 分） |
+| ゴール変更 | `RoutingAction.AcquirePositionAction-allow_goal_modification.yaml` | 走り出した直後に別の車がゴールに止まり、Autoware がゴールをずらして停車 | ✅ 7 回中 6 回合格（※） |
+| 認識の欠落 | `Property.detectedObjectMissingProbability.yaml` | 前を走る遅い車の認識が 7 割欠ける状態で、ぶつからずに走りきれるか | ✅ 合格（約 4 分） |
+| 認識の遅れ・誤差 | `Property.detectedObjectPublishingDelay.yaml`、`Property.detectedObjectPositionStandardDeviation.yaml`、`Property.detectionSensorRange.yaml` など | 認識結果の遅れ・位置のばらつき・見える距離を変える | 未確認 |
+| 経路の指定 | `RoutingAction.AssignRouteAction.yaml` | 経由地を指定して走る | 未確認 |
+| 故障の注入 | `CustomCommandAction.FaultInjectionAction.yaml` | Autoware に故障を知らせたときの振る舞い | 未確認 |
+| 信号の認識 | `CustomCommandAction.PseudoTrafficSignalDetectorConfidenceSetAction@v1.yaml` | 信号の認識の確からしさを変える | 未確認 |
+
+※ ゴールが変わってルートが切り替わる瞬間に、Autoware の経路計画プロセスがまれに異常終了することがあります（`guard condition implementation is invalid`。ROS 2 のタイミングの問題で、CPU が少ないと起きやすい）。失敗したら再実行してください。
+
+同梱シナリオの一覧はコンテナの中で確認できます（`scripts/shell.sh` で入って `ls /aw_ws/install/scenario_test_runner/share/scenario_test_runner/scenario`）。
+シナリオの書き方は [scenario_simulator_v2 のドキュメント](https://tier4.github.io/scenario_simulator_v2-docs/) を参照してください。
+
+## 5. オプション（環境変数）
 
 指定のしかた：
 
@@ -128,7 +158,7 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | `BUILD_JOBS` | `2` | （setup）ビルドの並列数。メモリ不足で落ちるなら `1` |
 | `HTTPS_PROXY` / `PROXY_CA_CERT` | なし | （setup）社内プロキシと、その CA 証明書（下記） |
 
-## 5. トラブルシューティング
+## 6. トラブルシューティング
 
 | 症状 | 対処 |
 |---|---|
@@ -136,7 +166,7 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | `Windows コンテナのモードです` | タスクトレイの Docker アイコンを右クリック →「Switch to Linux containers」 |
 | setup がメモリ不足（`Killed` など）で失敗 | `BUILD_JOBS=1` を指定して再実行（途中から再開されます） |
 | `AutowareError: ... WAITING_FOR_ENGAGE` で失敗 | マシンが遅い。`INITIALIZE_DURATION=600`・`REAL_TIME_FACTOR=0.3` を指定 |
-| ブラウザの表示（速度・自車）が更新されない | CPU 不足。Docker の CPU 割り当てを増やす。それでも遅いときは `SCREEN_SIZE=1280x720` |
+| ブラウザの表示（速度・自車）が更新されない・遅れる | CPU 不足。Docker の CPU 割り当てを増やす。それでも遅いときは `SCREEN_SIZE=1280x720`（車の動きは見えるが、速度などの数字は遅れることがある） |
 | ポート 6080 が使用中 | `VIEWER_PORT=6081` を指定し、ブラウザも 6081 で開く |
 | 社内プロキシの内側でビルドできない | Docker Desktop の Settings → Resources → Proxies を設定し、`HTTPS_PROXY`・`HTTP_PROXY` も指定。TLS を検査するプロキシなら、その CA 証明書（PEM 形式。Windows の「Base 64 encoded X.509 (.CER)」で書き出したもの）を `PROXY_CA_CERT` に指定 |
 | Windows で「このシステムではスクリプトの実行が無効」と出る | `.ps1` を直接実行せず、`scripts\setup.cmd` / `scripts\run.cmd` を使う。会社のポリシーで PowerShell が使えない場合は、WSL2 の Ubuntu で Mac / Linux の手順を使う |
@@ -144,7 +174,7 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | setup で `universe-devel-humble-20260929: not found` と出る | 固定している Autoware の日付版イメージが公開終了した。`AUTOWARE_IMAGE` に新しい日付版（例 `ghcr.io/autowarefoundation/autoware:universe-devel-humble-20261101`）を、`SIM_VERSION` にその時点の [simulator.repos](https://github.com/autowarefoundation/autoware/blob/main/repositories/simulator.repos) のバージョンを指定 |
 | ディスクを空けたい | `docker image rm sandbox-autoware-sim ghcr.io/autowarefoundation/autoware:universe-devel-humble-20260929` と `docker builder prune` |
 
-## 6. 動作確認状況
+## 7. 動作確認状況
 
 | 環境 | 状況 |
 |---|---|
@@ -153,7 +183,7 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | Mac（Apple Silicon） | 未確認（arm64 版の Autoware イメージ、scenario_simulator_v2 の arm64 対応、macOS 標準の bash 3.2 での動作は確認済み） |
 | Linux PC | クラウド環境と同じ Linux なので、Docker があれば同様に動く見込み |
 
-## 7. 構成
+## 8. 構成
 
 | 要素 | 内容 |
 |---|---|
@@ -171,7 +201,7 @@ scripts\make_gif.cmd output\<日時>\rviz.mp4 80 115 4     # Windows
 | `scripts/*.sh` | Mac / Linux 用（macOS 標準の bash 3.2 でも動く） |
 | `scripts/*.cmd`・`scripts/*.ps1` | Windows 用（`.cmd` が入口で、中から PowerShell 5.1 互換の `.ps1` を呼ぶ） |
 
-## 8. 仕組みのメモ（つまずいた点）
+## 9. 仕組みのメモ（つまずいた点）
 
 | 症状 | 原因 | 対処 |
 |---|---|---|

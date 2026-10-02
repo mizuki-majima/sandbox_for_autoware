@@ -36,6 +36,7 @@ cleanup() {
   for pid in "${BACKGROUND_PIDS[@]}"; do
     kill "${pid}" 2>/dev/null || true
   done
+  pkill -x rviz2 2>/dev/null || true
   # ホストのユーザーで結果を開けるよう、所有者を合わせる
   if [ -n "${HOST_UID:-}" ] && [ -n "${HOST_GID:-}" ]; then
     chown -R "${HOST_UID}:${HOST_GID}" "${OUT}" 2>/dev/null || true
@@ -103,7 +104,14 @@ if [ "${VIEWER}" = "1" ]; then
   # ソフトウェア描画の RViz は CPU を多く使い、Autoware に CPU を取られるとメッセージを処理できず表示が止まる。
   # そのため RViz は通常の優先度で動かし、Autoware・シミュレーターは nice 値（SIM_NICE）を上げて優先度を下げる。
   # （Autoware 側の RViz は sandbox_autoware_launch で止め、scenario_test_runner 側も launch_rviz:=false にしている）
-  rviz2 -d "${RVIZ_CONFIG}" -s "" >/tmp/rviz.log 2>&1 &
+  # RViz が途中で終了しても、シナリオの間は起動し直す（ログは rviz.log に残す）
+  (
+    while true; do
+      rviz2 -d "${RVIZ_CONFIG}" -s "" >>"${OUT}/rviz.log" 2>&1 || true
+      echo "[run_scenario] RViz が終了したため起動し直します" >>"${OUT}/rviz.log"
+      sleep 2
+    done
+  ) &
   BACKGROUND_PIDS+=($!)
 fi
 
